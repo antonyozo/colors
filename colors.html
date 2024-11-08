@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+
+<head>
+	<title>colors</title>
+</head>
+
+<body>
+	<h1>&#x1F7E5;c&#x1F7E6;o&#x1F7E7;l&#x1F7E8;o&#x1F7E9;r&#x1F7EA;s&#x1F7EB;</h1>
+
+	<h2>
+		<p>custom game</p>
+
+		rows <input id="rows" type="number">
+		cols <input id="cols" type="number">
+		colors <input id="colors" type="number">
+		count <input id="count" type="number">
+		walls <input id="walls" type="number">
+
+		<p>quick start</p>
+
+		<button class="start">5x5x3x3x5</button>
+		<button class="start">7x7x5x5x10</button>
+		<button class="start">10x10x7x9x20</button>
+		<button class="start">17x17x10x13x57</button>
+		<button class="start">22x22x13x17x100</button>
+	</h2>
+
+	<h3></h3>
+	<h4></h4>
+	<h5></h5>
+</body>
+
+<style>
+	body {
+		color: #fff;
+		background-color: #000;
+		text-align: center;
+		font-family: monospace;
+	}
+
+	button {
+		width: 50px;
+		height: 50px;
+		border-width: 5px;
+		border-radius: 5px;
+		border-color: #111;
+		background-color: #222;
+		color: #fff;
+		font-size: 17px;
+		font-weight: 900;
+		font-family: monospace;
+		vertical-align: top;
+		transition: .3s;
+	}
+
+	div { white-space: nowrap }
+	input { width: 70px }
+
+	.start { width: auto; height: auto }
+	.wasdz {
+		width: 60px;
+		height: 60px;
+		margin: 17px;
+		font-size: 30px;
+	}
+</style>
+
+<script>
+	class cell {
+		constructor(row, col) {
+			this.row = row
+			this.col = col
+			this.ui = hall
+			this.btn = document.createElement('button')
+			this.btn.style.backgroundColor = hall
+			this.btn.addEventListener('click', () => {
+				prevmove = ''
+
+				if (this.ui === hall) this.val = wall
+				else if (this.ui === wall && ++total) this.val = values[0]
+				else if (this.ui === values[colors - 1] && total--) this.val = hall
+				else for (let i = 0; i < colors; i++) {
+					if (this.ui !== values[i]) continue
+					this.val = values[i + 1]
+					break
+				}
+			})
+		}
+
+		set val(x) {
+			this.btn.style.backgroundColor = x
+			this.ui = x
+		}
+
+		move(loop, /** @type {-1 | 1} */ deincrement, loops, isrowloop) {
+			if (this.ui === hall || this.ui === wall) return
+			const row = this.row
+			const col = this.col
+			const ui = this.ui
+
+			for (let i = loop + deincrement; i < loops && i > -1; i += deincrement) {
+				const cell = isrowloop ? cells[i][col] : cells[row][i]
+				if (cell.ui === hall) cell.val = ui
+				else if (cell.ui === ui) total--
+				else break
+				isrowloop
+					? cells[i - deincrement][col].val = hall
+					: cells[row][i - deincrement].val = hall
+			}
+		}
+	}
+
+	const move = move => {
+		if (total <= colors) return
+
+		if (['w', 'a', 's', 'd'].includes(move)) {
+			if (prevmove === move) return
+
+			for (let i = cells.length - 1; i > -1; i--)
+				for (let j = cells[0].length - 1; j > -1; j--)
+					copies.push(cells[i][j].ui)
+
+			copies.push(total)
+			moves++
+		}
+
+		prevmove = move
+
+		switch (move) {
+			case 'z':
+				if (!copies.length) break
+				total = copies.pop()
+				cells.map(e => e.map(e => e.val = copies.pop()))
+				undos++
+				break
+			case 'w': cells.forEach(c => c.forEach(c => c.move(c.row, -1, rows, true))); break
+			case 'a': cells.forEach(c => c.forEach(c => c.move(c.col, -1, cols, false))); break
+			case 's': cellsrowsreversed.forEach(c => c.forEach(c => c.move(c.row, 1, rows, true))); break
+			case 'd': cellscolsreversed.forEach(c => c.forEach(c => c.move(c.col, 1, cols, false))); break
+		}
+
+		document.querySelector('h2').innerHTML = `moves ${moves}, undos ${undos}`
+		if (total > colors) return
+		document.querySelector('h2').innerHTML = 'gg'
+		clearInterval(interval)
+	}
+
+	const start = () => {
+		if (colors > 13) colors = 13
+		total = colors * count
+
+		document.querySelector('h3').innerHTML = ''
+		document.querySelector('h4').innerHTML = ''
+		if (walls + total > rows * cols)
+			return document.querySelector('h3').innerHTML = 'values do not add up'
+
+		const random = []
+		cells = new Array(rows).fill().map(() => [])
+
+		for (let row = 0; row < rows; row++) {
+			const div = document.createElement('div')
+			document.querySelector('h4').append(div)
+
+			for (let col = 0; col < cols; col++) {
+				cells[row][col] = new cell(row, col)
+				div.append(cells[row][col].btn)
+				random.push(cells[row][col])
+			}
+		}
+
+		if (!total) return
+
+		cellsrowsreversed = cells.map(c => c.map(c => c)).reverse()
+		cellscolsreversed = cells.map(c => c.map(c => c).reverse())
+
+		for (let i = random.length; i > 0;) {
+			const j = ~~(Math.random() * --i)
+			const cell = random[i]
+			random[i] = random[j]
+			random[j] = cell
+		}
+
+		for (let i = 0; i < walls; i++) random.pop().val = wall
+
+		values = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff', '#f90', '#f09', '#90f', '#09f', '#173', '#2ff3', '#fff'].map(e => [Math.random(), e]).sort().map(e => e[1])
+		values.length = colors
+		values.forEach(e => { for (let i = 0; i < count; i++) random.pop().val = e })
+
+		const btn = document.createElement('button')
+		document.querySelector('h3').append(btn)
+		btn.classList.add('start')
+		btn.innerHTML = 'proceed'
+		btn.style.fontSize = '25px'
+		btn.addEventListener('click', () => {
+			interval = setInterval(() => document.querySelector('h3').innerHTML = ++time, 1000)
+
+			document.querySelector('h2').innerHTML = `moves ${moves}, undos ${undos}`
+
+			const wasdz = ['w', 'a', 'z', 'd', 's'].map(e => {
+				const btn = document.createElement('button')
+				btn.addEventListener('click', () => move(e))
+				btn.classList.add('wasdz')
+				btn.innerHTML = e
+				return btn
+			})
+
+			const div = document.createElement('div')
+			div.append(...wasdz.slice(1, 4))
+
+			document.querySelector('h3').innerHTML = 0
+			document.querySelector('h5').innerHTML = ''
+			document.querySelector('h5').append(wasdz[0], div, wasdz[4])
+			document.addEventListener('keydown', e => {
+				switch (e.keyCode) {
+					case 38: case 87: return move('w')
+					case 37: case 65: return move('a')
+					case 40: case 83: return move('s')
+					case 39: case 68: return move('d')
+					case 90: return move('z')
+				}
+			})
+
+			let x0, y0
+
+			document.addEventListener('touchstart', e => {
+				x0 = e.touches[0].clientX
+				y0 = e.touches[0].clientY
+			})
+
+			document.addEventListener('touchmove', e => {
+				if (!x0 || !y0) return
+
+				const xd = x0 - e.touches[0].clientX
+				const yd = y0 - e.touches[0].clientY
+
+				if (Math.abs(xd) > Math.abs(yd)) xd > 0 ? move('a') : move('d')
+				else yd > 0 ? move('w') : move('s')
+			})
+		})
+	}
+
+	/** @type {cell[][]} */ let cells,
+		cellsrowsreversed = cells,
+		cellscolsreversed = cells
+	const wall = '#000', hall = '#333', copies = []
+	let rows = 1, cols = 1, colors = 0, count = 1, total = 0, walls = 0,
+		time = 0, moves = 0, undos = 0, prevmove = '', values = [''], interval
+
+	document.querySelectorAll('input').forEach(e =>
+		e.addEventListener('input', () => {
+			const value = Math.abs(~~e.value)
+
+			switch (e.id) {
+				case 'rows': rows = value; break
+				case 'cols': cols = value; break
+				case 'colors': colors = value; break
+				case 'count': count = value; break
+				case 'walls': walls = value; break
+			}
+
+			start()
+		})
+	)
+
+	document.querySelectorAll('.start').forEach(e =>
+		e.addEventListener('click', () => {
+			if (e.innerHTML === 'proceed') return
+
+			const value = e.innerHTML.split('x')
+
+			rows = +value[0]
+			cols = +value[1]
+			colors = +value[2]
+			count = +value[3]
+			walls = +value[4]
+
+			start()
+		})
+	)
+</script>
